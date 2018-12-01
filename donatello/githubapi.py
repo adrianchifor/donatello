@@ -4,9 +4,10 @@ ALLOWED_ACTIONS = ['created']
 
 
 class GithubAPI(object):
-    def __init__(self, token, webhook_secret):
+    def __init__(self, token, webhook_secret, allowed_repositories):
         self.gh = Github(token)
         self.webhook_secret = webhook_secret
+        self.allowed_repositories = allowed_repositories
 
     def webhook(self, request):
         """
@@ -15,6 +16,12 @@ class GithubAPI(object):
         """
         if not request:
             print("Empty request.")
+            return None
+
+        repo_name = request['repository']['full_name']
+
+        if repo_name not in self.allowed_repositories:
+            print(f"Repository not allowed: {repo_name}.")
             return None
 
         action = request['action']
@@ -27,7 +34,7 @@ class GithubAPI(object):
             "action": action,
             "pr_number": request['issue']['number'],
             "author": request['comment']['user']['login'],
-            "repo_name": request['repository']['full_name'],
+            "repo_name": repo_name,
             "body": request['comment']['body'],
         }
 
@@ -38,6 +45,18 @@ class GithubAPI(object):
         pr = repo.get_pull(int(pr_number))
 
         return pr
+
+    def is_author(self, repository, pr_number, user):
+        pr = self._get_pull_request(repository, pr_number)
+        author = pr.user.login
+
+        return author == user
+
+    def is_collaborator(self, repository, user):
+        repo = self.gh.get_repo(repository)
+        collaborators = [collaborator.login for collaborator in repo.get_collaborators()]
+
+        return user in collaborators
 
     def get_comments(self, repository, pr_number):
         """
