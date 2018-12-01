@@ -14,12 +14,9 @@ GITHUB_APP_ID = os.getenv("GITHUB_APP_ID", None)
 GITHUB_PRIVATE_KEY = os.getenv("GITHUB_PRIVATE_KEY", None)
 GITHUB_WEBHOOK_SECRET = os.getenv("GITHUB_WEBHOOK_SECRET", None)
 
-REQUIRED_ENV_VARIABLES = [BINANCE_API_KEY , BINANCE_SECRET_KEY , GITHUB_APP_ID , GITHUB_PRIVATE_KEY, GITHUB_WEBHOOK_SECRET]
-
-
-if all(REQUIRED_ENV_VARIABLES):
-    requirements = ",".join(REQUIRED_ENV_VARIABLES)
-    raise Exception(f"Make sure you've set {requirements} as environment variables")
+if not (BINANCE_API_KEY and BINANCE_SECRET_KEY and GITHUB_APP_ID and GITHUB_PRIVATE_KEY and GITHUB_WEBHOOK_SECRET):
+    raise Exception("Make sure you've set BINANCE_API_KEY, BINANCE_SECRET_KEY, GITHUB_APP_ID, +"
+                    "GITHUB_PRIVATE_KEY and GITHUB_WEBHOOK_SECRET as environment variables")
 
 exchange = None
 
