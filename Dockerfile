@@ -10,4 +10,4 @@ RUN apk add --no-cache --virtual build-dependencies gcc g++ musl-dev \
   && apk del build-dependencies \
   && rm -r /root/.cache
 
-CMD ["python3", "/app/main.py"]
+CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "-k", "gevent", "main:app"]
