@@ -45,16 +45,17 @@ def main():
     """
     tickers = None
     balance = None
-    try:
-        tickers, balance = init_exchange()
-    except Exception as e:
-        app.logger.error(e)
 
     try:
         request_json = request.get_json()
         gh = githubapi.GithubAPI(token=GITHUB_TOKEN, webhook_secret=GITHUB_WEBHOOK_SECRET, allowed_repositories=ALLOWED_REPOS)
         event = gh.webhook(request=request_json)
         if event:
+            try:
+                tickers, balance = init_exchange()
+            except Exception as e:
+                app.logger.error(e)
+
             if event["body"].startswith("/tip"):
                 if exchange and tickers and balance:
                     amount_tipped = tip.parse_tip(event["body"])
