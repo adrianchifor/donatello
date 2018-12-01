@@ -1,5 +1,7 @@
 # Donatello
 
+![Alt text](logo.png?raw=true "Donatello")
+
 Crypto tipping bot for github PRs/projects
 
 ## Requirements
