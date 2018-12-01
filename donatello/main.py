@@ -1,23 +1,27 @@
 #!/usr/bin/env python3
 import os
-import sys
+import logging
 import ccxt
-from typing import Any, Tuple, Union
+from typing import Any
 
 import githubapi, payment, utils, tip
 
-from flask import jsonify, Request
+from flask import Flask, request, make_response
+
+app = Flask(__name__)
 
 BINANCE_ADJUST_TIME = bool(os.getenv("BINANCE_ADJUST_TIME", False))
 BINANCE_API_KEY = os.getenv("BINANCE_API_KEY", None)
 BINANCE_SECRET_KEY = os.getenv("BINANCE_SECRET_KEY", None)
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", None)
 GITHUB_WEBHOOK_SECRET = os.getenv("GITHUB_WEBHOOK_SECRET", None)
-ALLOWED_REPOS = "adrianchifor/donatello"
+ALLOWED_REPOS = os.getenv("ALLOWED_REPOS", None)
 
-if not (BINANCE_API_KEY and BINANCE_SECRET_KEY and GITHUB_TOKEN and GITHUB_WEBHOOK_SECRET):
-    raise Exception("Make sure you've set BINANCE_API_KEY, BINANCE_SECRET_KEY, GITHUB_TOKEN " +
-                    "and GITHUB_WEBHOOK_SECRET as environment variables")
+if not (BINANCE_API_KEY and BINANCE_SECRET_KEY and GITHUB_TOKEN and GITHUB_WEBHOOK_SECRET and ALLOWED_REPOS):
+    raise Exception("Make sure you've set BINANCE_API_KEY, BINANCE_SECRET_KEY, GITHUB_TOKEN, " +
+                    "GITHUB_WEBHOOK_SECRET and ALLOWED_REPOS as environment variables")
+
+ALLOWED_REPOS = ALLOWED_REPOS.split(",")
 
 exchange = ccxt.binance({
     "apiKey": BINANCE_API_KEY,
@@ -29,9 +33,16 @@ exchange = ccxt.binance({
 })
 
 
-def main(request: Request) -> Union[str, Tuple[Any, int]]:
+@app.before_first_request
+def setup_logging():
+    app.logger.addHandler(logging.StreamHandler())
+    app.logger.setLevel(logging.INFO)
+
+
+@app.route('/', methods=['POST', 'GET'])
+def main() -> Any:
     """
-    Responds to any HTTP request.
+    Responds to any HTTP requests.
     :param request: flask.Request
     """
     tickers = None
@@ -39,13 +50,12 @@ def main(request: Request) -> Union[str, Tuple[Any, int]]:
     try:
         tickers, balance = init_exchange()
     except Exception as e:
-        print(e)
+        app.logger.error(e)
 
-    response = {}
     try:
         request_json = request.get_json()
         signature = request.headers.get('X-Hub-Signature')
-        gh = githubapi.GithubAPI(token=GITHUB_TOKEN, webhook_secret=GITHUB_WEBHOOK_SECRET, allowed_repositories=[ALLOWED_REPOS])
+        gh = githubapi.GithubAPI(token=GITHUB_TOKEN, webhook_secret=GITHUB_WEBHOOK_SECRET, allowed_repositories=ALLOWED_REPOS)
         event = gh.webhook(request=request_json, signature=signature)
         if event:
             if event["body"].startswith("/tip"):
@@ -69,7 +79,7 @@ def main(request: Request) -> Union[str, Tuple[Any, int]]:
                     else:
                         gh.comment(event["repo_name"], event["pr_number"], "Failed to parse tip message")
                 else:
-                    print("exchange, tickers or balance not initialised")
+                    app.logger.error("exchange, tickers or balance not initialised")
 
             elif event["body"].startswith("/redeem"):
                 comments = gh.get_comments(event["repo_name"], event["pr_number"])
@@ -109,36 +119,23 @@ def main(request: Request) -> Union[str, Tuple[Any, int]]:
                                 else:
                                     gh.comment(event["repo_name"], event["pr_number"], "/withdraw failed")
                             else:
-                                print("exchange or tickers not initialised")
+                                app.logger.error("exchange or tickers not initialised")
                         else:
                             gh.comment(event["repo_name"], event["pr_number"], "Failed to parse tip message")
                     else:
                         gh.comment(event["repo_name"], event["pr_number"], "Failed to parse redeem message")
-
-        # Build response
-        response['functionPublicIP'] = utils.getFunctionPublicIP() # optional/debugging
-        response['inputRequest'] = request_json
-        return jsonify(response), 200
     except AttributeError as e:
-        print(e)
+        app.logger.error(e)
 
-    return ""
+    return make_response("", 200)
 
 
 def init_exchange():
     tickers = exchange.fetch_tickers()
     balance = payment.filter_balance(exchange.fetch_total_balance(), tickers)
-    print(f"Balance: {balance}")
-
-    for coin, amount in balance.items():
-        coin_in_usd = payment.coin_total_usd(coin, amount, tickers)
-        print(f"{amount} {coin} = ${coin_in_usd}")
-
-    test_amount = payment.coin_amount_for_usd("XLM", 5.0, tickers)
-    print(f"Amount for $5: {test_amount} XLM")
 
     return tickers, balance
 
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    app.run('0.0.0.0', port=5000)
