@@ -5,7 +5,7 @@ import ccxt
 
 from flask import jsonify
 from utils import getFunctionPublicIP
-from payment import filter_balance, coin_total_usd, withdraw
+from payment import filter_balance, coin_total_usd, coin_amount_for_usd, withdraw
 
 BINANCE_API_KEY = os.getenv("BINANCE_API_KEY", None)
 BINANCE_SECRET_KEY = os.getenv("BINANCE_SECRET_KEY", None)
@@ -21,19 +21,26 @@ exchange = None
 
 
 def main(request):
-    """Responds to any HTTP request.
-    Args:
-        request (flask.Request): HTTP request object
     """
-    init_exchange()
-    request_json = request.get_json()
+    Responds to any HTTP request.
+    :param request: flask.Request
+    """
+    try:
+        init_exchange()
+    except Exception as e:
+        print(e)
 
-    # Build response
     response = {}
-    response['functionPublicIP'] = getFunctionPublicIP() # optional/debugging
-    response['inputRequest'] = request_json
+    try:
+        request_json = request.get_json()
+        # Build response
+        response['functionPublicIP'] = getFunctionPublicIP() # optional/debugging
+        response['inputRequest'] = request_json
+        return jsonify(response), 200
+    except AttributeError as e:
+        print(e)
 
-    return jsonify(response), 200
+    return ""
 
 
 def init_exchange():
@@ -53,6 +60,9 @@ def init_exchange():
     for coin, amount in balance.items():
         coin_in_usd = coin_total_usd(coin, amount, tickers)
         print(f"{amount} {coin} = ${coin_in_usd}")
+
+    test_amount = coin_amount_for_usd("XLM", 5.0, tickers)
+    print(f"Amount for $5: {test_amount} XLM")
 
 
 if __name__ == '__main__':
