@@ -14,7 +14,7 @@ GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", None)
 GITHUB_WEBHOOK_SECRET = os.getenv("GITHUB_WEBHOOK_SECRET", None)
 
 if not (BINANCE_API_KEY and BINANCE_SECRET_KEY and GITHUB_TOKEN and GITHUB_WEBHOOK_SECRET):
-    raise Exception("Make sure you've set BINANCE_API_KEY, BINANCE_SECRET_KEY, GITHUB_TOKEN +"
+    raise Exception("Make sure you've set BINANCE_API_KEY, BINANCE_SECRET_KEY, GITHUB_TOKEN " +
                     "and GITHUB_WEBHOOK_SECRET as environment variables")
 
 exchange = ccxt.binance({
@@ -58,9 +58,7 @@ def main(request):
                                     coins_supported.append(coin)
 
                             if len(coins_supported) > 0:
-                                comment = f"Coins available for tipping: {coins_supported}. " +
-                                          "Please redeem by commenting in the following format:\n" +
-                                          "```\n/redeem <COIN> <ADDRESS>\n```"
+                                comment = f"Coins available for tipping: {coins_supported}. Please redeem by commenting in the following format:\n```\n/redeem <COIN> <ADDRESS>\n```"
                                 gh.comment(event["repo_name"], event["pr_name"], comment)
                             else:
                                 gh.comment(event["repo_name"], event["pr_name"], "Sorry, not enough funds.")
