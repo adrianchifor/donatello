@@ -75,7 +75,11 @@ def main(request):
                 comments_with_tip = []
                 comments_with_redeem = []
                 for comment in comments:
-                    if comment.startswith("/tip"):
+                    if comment.startswith("/withdraw"):
+                        comments_with_tip = []
+                        comments_with_redeem = []
+                        break
+                    elif comment.startswith("/tip"):
                         comments_with_tip.append(comment)
                     elif comment.startswith("/redeem"):
                         comments_with_redeem.append(comment)
@@ -88,7 +92,11 @@ def main(request):
                         if amount:
                             if exchange and tickers:
                                 crypto_amount = payment.coin_amount_for_usd(coin, amount, tickers)
-                                payment.withdraw(exchange, coin, crypto_amount, address)
+                                successful = payment.withdraw(exchange, coin, crypto_amount, address)
+                                if successful:
+                                    gh.comment(event["repo_name"], event["pr_name"], "/withdraw successful")
+                                else:
+                                    gh.comment(event["repo_name"], event["pr_name"], "/withdraw failed")
                             else:
                                 print("exchange or tickers not initialised")
                         else:
