@@ -2,10 +2,11 @@
 import os
 import sys
 import ccxt
+from typing import Any, Tuple, Union
 
 import githubapi, payment, utils, tip
 
-from flask import jsonify
+from flask import jsonify, Request
 
 BINANCE_ADJUST_TIME = bool(os.getenv("BINANCE_ADJUST_TIME", False))
 BINANCE_API_KEY = os.getenv("BINANCE_API_KEY", None)
@@ -28,7 +29,7 @@ exchange = ccxt.binance({
 })
 
 
-def main(request):
+def main(request: Request) -> Union[str, Tuple[Any, int]]:
     """
     Responds to any HTTP request.
     :param request: flask.Request
@@ -43,8 +44,9 @@ def main(request):
     response = {}
     try:
         request_json = request.get_json()
+        signature = request.headers.get('X-Hub-Signature')
         gh = githubapi.GithubAPI(token=GITHUB_TOKEN, webhook_secret=GITHUB_WEBHOOK_SECRET, allowed_repositories=[ALLOWED_REPOS])
-        event = gh.webhook(request=request_json)
+        event = gh.webhook(request=request_json, signature=signature)
         if event:
             if event["body"].startswith("/tip"):
                 if exchange and tickers and balance:
