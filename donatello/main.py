@@ -51,7 +51,7 @@ def main(request):
                     amount_tipped = tip.parse_tip(event["body"])
                     if amount_tipped:
                         if amount_tipped < 5.0:
-                            gh.comment(event["repo_name"], event["pr_name"], "Minimum tip is $5")
+                            gh.comment(event["repo_name"], event["pr_number"], "Minimum tip is $5")
                         else:
                             coins_supported = []
                             for coin, amount in balance.items():
@@ -61,16 +61,16 @@ def main(request):
 
                             if len(coins_supported) > 0:
                                 comment = f"Coins available for tipping: {coins_supported}. Please redeem by commenting in the following format:\n```\n/redeem <COIN> <ADDRESS>\n```"
-                                gh.comment(event["repo_name"], event["pr_name"], comment)
+                                gh.comment(event["repo_name"], event["pr_number"], comment)
                             else:
-                                gh.comment(event["repo_name"], event["pr_name"], "Sorry, not enough funds.")
+                                gh.comment(event["repo_name"], event["pr_number"], "Sorry, not enough funds.")
                     else:
-                        gh.comment(event["repo_name"], event["pr_name"], "Failed to parse tip message")
+                        gh.comment(event["repo_name"], event["pr_number"], "Failed to parse tip message")
                 else:
                     print("exchange, tickers or balance not initialised")
 
             elif event["body"].startswith("/redeem"):
-                comments = gh.get_comments(event["repo_name"], event["pr_name"])
+                comments = gh.get_comments(event["repo_name"], event["pr_number"])
                 comments_with_tip = []
                 comments_with_redeem = []
                 verified_comments_with_redeem = []
@@ -86,7 +86,7 @@ def main(request):
                         comments_with_redeem.append(comment)
 
                 for redeem_comment in comments_with_redeem:
-                    if gh.is_author(repository=event["repo_name"], pr_number=event["pr_name"], user=redeem_comment['user']):
+                    if gh.is_author(repository=event["repo_name"], pr_number=event["pr_number"], user=redeem_comment['user']):
                         verified_comments_with_redeem.append(redeem_comment)
 
                 for tip_comment in comments_with_tip:
@@ -103,15 +103,15 @@ def main(request):
                                 crypto_amount = payment.coin_amount_for_usd(coin, amount_tipped, tickers)
                                 successful = payment.withdraw(exchange, coin, crypto_amount, address)
                                 if successful:
-                                    gh.comment(event["repo_name"], event["pr_name"], "/withdraw successful")
+                                    gh.comment(event["repo_name"], event["pr_number"], "/withdraw successful")
                                 else:
-                                    gh.comment(event["repo_name"], event["pr_name"], "/withdraw failed")
+                                    gh.comment(event["repo_name"], event["pr_number"], "/withdraw failed")
                             else:
                                 print("exchange or tickers not initialised")
                         else:
-                            gh.comment(event["repo_name"], event["pr_name"], "Failed to parse tip message")
+                            gh.comment(event["repo_name"], event["pr_number"], "Failed to parse tip message")
                     else:
-                        gh.comment(event["repo_name"], event["pr_name"], "Failed to parse redeem message")
+                        gh.comment(event["repo_name"], event["pr_number"], "Failed to parse redeem message")
 
         # Build response
         response['functionPublicIP'] = utils.getFunctionPublicIP() # optional/debugging
