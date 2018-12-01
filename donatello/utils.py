@@ -30,5 +30,10 @@ def supported_coins_balance(balance, tickers):
         if coin != "BTC":
             if f"{coin}/BTC" in tickers:
                 supported_coins_balance[coin] = balance[coin]
+        else:
+            try:
+                supported_coins_balance["BTC"] = balance[coin]
+            except KeyError:
+                print("BTC not in balance")
 
     return supported_coins_balance
