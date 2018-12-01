@@ -1,8 +1,16 @@
+#!/usr/bin/env python3
 import os
-
+import sys
+from flask import jsonify
+from utils import getFunctionPublicIP
 
 def main(request):
-    print("hello hack day")
+    """Responds to any HTTP request.
+    Args:
+        request (flask.Request): HTTP request object
+    """
+
+    request_json = request.get_json()
 
     BINANCE_API_KEY = os.getenv("BINANCE_API_KEY", None)
     BINANCE_SECRET_KEY = os.getenv("BINANCE_SECRET_KEY", None)
@@ -13,4 +21,13 @@ def main(request):
         raise Exception("Make sure you've set BINANCE_API_KEY, BINANCE_SECRET_KEY, " +
                         "GITHUB_APP_ID and GITHUB_PRIVATE_KEY as environment variables")
 
-    print("all env vars set")
+    # Build response
+    response = {}
+    response['functionPublicIP'] = getFunctionPublicIP() # optional/debugging
+    response['inputRequest'] = request_json
+
+    return jsonify(response), 200
+
+
+if __name__ == '__main__':
+    main(sys.argv[1:])
