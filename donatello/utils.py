@@ -1,9 +1,7 @@
-import socket
+import http.client
 
 
 def getFunctionPublicIP():
-    import http.client
-    import json
     conn = http.client.HTTPSConnection('api.ipify.org', 443)
     conn.request('GET', '/?format=json')
     ip = conn.getresponse().read()

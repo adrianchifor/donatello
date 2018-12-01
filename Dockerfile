@@ -6,7 +6,7 @@ COPY donatello/*.py /app/
 WORKDIR /app
 
 RUN apk add --no-cache --virtual build-dependencies gcc g++ musl-dev \
-  && pip install requirements.txt \
+  && pip install -r requirements.txt \
   && apk del build-dependencies \
   && rm -r /root/.cache
 
