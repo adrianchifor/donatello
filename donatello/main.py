@@ -33,7 +33,7 @@ def main(request):
     response = {}
     try:
         request_json = request.get_json()
-        gh = github.GithubAPI(token=GITHUB_TOKEN, webhook_secret=GITHUB_WEBHOOK_SECRET)
+        gh = githubapi.GithubAPI(token=GITHUB_TOKEN, webhook_secret=GITHUB_WEBHOOK_SECRET)
         gh.webhook(request=request_json)
         # Build response
         response['functionPublicIP'] = utils.getFunctionPublicIP() # optional/debugging
