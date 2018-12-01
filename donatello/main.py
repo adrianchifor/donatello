@@ -3,20 +3,19 @@ import os
 import sys
 import ccxt
 
-import github, payment, utils
+import githubapi, payment, utils
 
 from flask import jsonify
 
 BINANCE_ADJUST_TIME = bool(os.getenv("BINANCE_ADJUST_TIME", False))
 BINANCE_API_KEY = os.getenv("BINANCE_API_KEY", None)
 BINANCE_SECRET_KEY = os.getenv("BINANCE_SECRET_KEY", None)
-GITHUB_APP_ID = os.getenv("GITHUB_APP_ID", None)
-GITHUB_PRIVATE_KEY = os.getenv("GITHUB_PRIVATE_KEY", None)
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", None)
 GITHUB_WEBHOOK_SECRET = os.getenv("GITHUB_WEBHOOK_SECRET", None)
 
-if not (BINANCE_API_KEY and BINANCE_SECRET_KEY and GITHUB_APP_ID and GITHUB_PRIVATE_KEY and GITHUB_WEBHOOK_SECRET):
-    raise Exception("Make sure you've set BINANCE_API_KEY, BINANCE_SECRET_KEY, GITHUB_APP_ID, +"
-                    "GITHUB_PRIVATE_KEY and GITHUB_WEBHOOK_SECRET as environment variables")
+if not (BINANCE_API_KEY and BINANCE_SECRET_KEY and GITHUB_TOKEN and GITHUB_WEBHOOK_SECRET):
+    raise Exception("Make sure you've set BINANCE_API_KEY, BINANCE_SECRET_KEY, GITHUB_TOKEN +"
+                    "and GITHUB_WEBHOOK_SECRET as environment variables")
 
 exchange = None
 
@@ -34,7 +33,8 @@ def main(request):
     response = {}
     try:
         request_json = request.get_json()
-        github.webhook(request=request_json, secret=GITHUB_WEBHOOK_SECRET)
+        gh = github.GithubAPI(token=GITHUB_TOKEN, webhook_secret=GITHUB_WEBHOOK_SECRET)
+        gh.webhook(request=request_json)
         # Build response
         response['functionPublicIP'] = utils.getFunctionPublicIP() # optional/debugging
         response['inputRequest'] = request_json
