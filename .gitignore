@@ -1,0 +1,8 @@
+*.pyc
+*.swp
+*.bak
+*.backup
+*.zip
+.DS_Store
+build/
+dist/
