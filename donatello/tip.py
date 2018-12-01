@@ -20,7 +20,8 @@ def parse_redeem(comment: str) -> (str, str):
     :param comment: comment body as string
     :return: coin and address as tuple
     """
-    coin, address = None
+    coin = None
+    address = None
     try:
         body = comment.split(" ")
         coin = body[1]

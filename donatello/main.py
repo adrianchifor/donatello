@@ -32,7 +32,8 @@ def main(request):
     Responds to any HTTP request.
     :param request: flask.Request
     """
-    tickers, balance = None
+    tickers = None
+    balance = None
     try:
         tickers, balance = init_exchange()
     except Exception as e:
@@ -90,7 +91,6 @@ def main(request):
                 for tip_comment in comments_with_tip:
                     if gh.is_collaborator(repository=event["repo_name"], user=tip_comment['user']):
                         verified_comments_with_tip.append(tip_comment)
-
 
                 if len(verified_comments_with_tip) > 0 and len(verified_comments_with_redeem) > 0:
                     coin, address = tip.parse_redeem(verified_comments_with_redeem[-1]["body"])
