@@ -81,11 +81,10 @@ class GithubAPI(object):
         pr = self._get_pull_request(repository, pr_number)
 
         for comment in comments:
-            if body == comment.body:
+            if body == comment["body"]:
                 print("Comment already posted.")
                 return False
 
         pr.create_issue_comment(body)
 
         return True
-
