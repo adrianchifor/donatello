@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 import os
-import sys
+import logging
 import ccxt
 
 import githubapi, payment, utils, tip
 
-from flask import jsonify
+from flask import Flask, request, make_response
+
+app = Flask(__name__)
 
 BINANCE_ADJUST_TIME = bool(os.getenv("BINANCE_ADJUST_TIME", False))
 BINANCE_API_KEY = os.getenv("BINANCE_API_KEY", None)
@@ -28,19 +30,24 @@ exchange = ccxt.binance({
 })
 
 
-def main(request):
+@app.before_first_request
+def setup_logging():
+    app.logger.addHandler(logging.StreamHandler())
+    app.logger.setLevel(logging.INFO)
+
+
+@app.route('/', methods=['POST', 'GET'])
+def main():
     """
-    Responds to any HTTP request.
-    :param request: flask.Request
+    Responds to any HTTP requests
     """
     tickers = None
     balance = None
     try:
         tickers, balance = init_exchange()
     except Exception as e:
-        print(e)
+        app.logger.error(e)
 
-    response = {}
     try:
         request_json = request.get_json()
         gh = githubapi.GithubAPI(token=GITHUB_TOKEN, webhook_secret=GITHUB_WEBHOOK_SECRET, allowed_repositories=[ALLOWED_REPOS])
@@ -67,7 +74,7 @@ def main(request):
                     else:
                         gh.comment(event["repo_name"], event["pr_number"], "Failed to parse tip message")
                 else:
-                    print("exchange, tickers or balance not initialised")
+                    app.logger.error("exchange, tickers or balance not initialised")
 
             elif event["body"].startswith("/redeem"):
                 comments = gh.get_comments(event["repo_name"], event["pr_number"])
@@ -107,36 +114,23 @@ def main(request):
                                 else:
                                     gh.comment(event["repo_name"], event["pr_number"], "/withdraw failed")
                             else:
-                                print("exchange or tickers not initialised")
+                                app.logger.error("exchange or tickers not initialised")
                         else:
                             gh.comment(event["repo_name"], event["pr_number"], "Failed to parse tip message")
                     else:
                         gh.comment(event["repo_name"], event["pr_number"], "Failed to parse redeem message")
-
-        # Build response
-        response['functionPublicIP'] = utils.getFunctionPublicIP() # optional/debugging
-        response['inputRequest'] = request_json
-        return jsonify(response), 200
     except AttributeError as e:
-        print(e)
+        app.logger.error(e)
 
-    return ""
+    return make_response("", 200)
 
 
 def init_exchange():
     tickers = exchange.fetch_tickers()
     balance = payment.filter_balance(exchange.fetch_total_balance(), tickers)
-    print(f"Balance: {balance}")
-
-    for coin, amount in balance.items():
-        coin_in_usd = payment.coin_total_usd(coin, amount, tickers)
-        print(f"{amount} {coin} = ${coin_in_usd}")
-
-    test_amount = payment.coin_amount_for_usd("XLM", 5.0, tickers)
-    print(f"Amount for $5: {test_amount} XLM")
 
     return tickers, balance
 
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    app.run('0.0.0.0', port=5000)
