@@ -73,19 +73,30 @@ def main(request):
                 comments = gh.get_comments(event["repo_name"], event["pr_name"])
                 comments_with_tip = []
                 comments_with_redeem = []
+                verified_comments_with_redeem = []
+                verified_comments_with_tip = []
                 for comment in comments:
-                    if comment.startswith("/withdraw"):
+                    if comment["body"].startswith("/withdraw"):
                         comments_with_tip = []
                         comments_with_redeem = []
                         break
-                    elif comment.startswith("/tip"):
+                    elif comment["body"].startswith("/tip"):
                         comments_with_tip.append(comment)
-                    elif comment.startswith("/redeem"):
+                    elif comment["body"].startswith("/redeem"):
                         comments_with_redeem.append(comment)
 
-                if len(comments_with_tip) > 0 and len(comments_with_redeem) > 0:
-                    coin, address = tip.parse_redeem(comments_with_redeem[-1]["body"])
-                    amount_tipped = tip.parse_tip(comments_with_tip[-1]["body"])
+                for redeem_comment in comments_with_redeem:
+                    if gh.is_author(repository=event["repo_name"], pr_number=event["pr_name"], user=redeem_comment['user']):
+                        verified_comments_with_redeem.append(redeem_comment)
+
+                for tip_comment in comments_with_tip:
+                    if gh.is_collaborator(repository=event["repo_name"], user=tip_comment['user']):
+                        verified_comments_with_tip.append(tip_comment)
+
+
+                if len(verified_comments_with_tip) > 0 and len(verified_comments_with_redeem) > 0:
+                    coin, address = tip.parse_redeem(verified_comments_with_redeem[-1]["body"])
+                    amount_tipped = tip.parse_tip(verified_comments_with_tip[-1]["body"])
 
                     if coin and address:
                         if amount_tipped:
