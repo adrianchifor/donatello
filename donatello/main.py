@@ -3,19 +3,23 @@ import os
 import sys
 import ccxt
 
-from flask import jsonify
-from utils import getFunctionPublicIP
-from payment import filter_balance, coin_total_usd, coin_amount_for_usd, withdraw
+import github, payment, utils
 
+from flask import jsonify
+
+BINANCE_ADJUST_TIME = bool(os.getenv("BINANCE_ADJUST_TIME", False))
 BINANCE_API_KEY = os.getenv("BINANCE_API_KEY", None)
 BINANCE_SECRET_KEY = os.getenv("BINANCE_SECRET_KEY", None)
-GITHUB_APP_ID = os.getenv("GITHUB_APP_ID", "asd")
-GITHUB_PRIVATE_KEY = os.getenv("GITHUB_PRIVATE_KEY", "asd")
-BINANCE_ADJUST_TIME = bool(os.getenv("BINANCE_ADJUST_TIME", False))
+GITHUB_APP_ID = os.getenv("GITHUB_APP_ID", None)
+GITHUB_PRIVATE_KEY = os.getenv("GITHUB_PRIVATE_KEY", None)
+GITHUB_WEBHOOK_SECRET = os.getenv("GITHUB_PRIVATE_KEY", None)
 
-if not (BINANCE_API_KEY and BINANCE_SECRET_KEY and GITHUB_APP_ID and GITHUB_PRIVATE_KEY):
-    raise Exception("Make sure you've set BINANCE_API_KEY, BINANCE_SECRET_KEY, " +
-                    "GITHUB_APP_ID and GITHUB_PRIVATE_KEY as environment variables")
+REQUIRED_ENV_VARIABLES = [BINANCE_API_KEY , BINANCE_SECRET_KEY , GITHUB_APP_ID , GITHUB_PRIVATE_KEY, GITHUB_WEBHOOK_SECRET]
+
+
+if all(REQUIRED_ENV_VARIABLES):
+    requirements = ",".join(REQUIRED_ENV_VARIABLES)
+    raise Exception(f"Make sure you've set {requirements} as environment variables")
 
 exchange = None
 
@@ -33,8 +37,9 @@ def main(request):
     response = {}
     try:
         request_json = request.get_json()
+        github.webhook(request=request_json, secret=GITHUB_WEBHOOK_SECRET)
         # Build response
-        response['functionPublicIP'] = getFunctionPublicIP() # optional/debugging
+        response['functionPublicIP'] = utils.getFunctionPublicIP() # optional/debugging
         response['inputRequest'] = request_json
         return jsonify(response), 200
     except AttributeError as e:
@@ -54,14 +59,14 @@ def init_exchange():
     })
 
     tickers = exchange.fetch_tickers()
-    balance = filter_balance(exchange.fetch_total_balance(), tickers)
+    balance = payment.filter_balance(exchange.fetch_total_balance(), tickers)
     print(f"Balance: {balance}")
 
     for coin, amount in balance.items():
-        coin_in_usd = coin_total_usd(coin, amount, tickers)
+        coin_in_usd = payment.coin_total_usd(coin, amount, tickers)
         print(f"{amount} {coin} = ${coin_in_usd}")
 
-    test_amount = coin_amount_for_usd("XLM", 5.0, tickers)
+    test_amount = payment.coin_amount_for_usd("XLM", 5.0, tickers)
     print(f"Amount for $5: {test_amount} XLM")
 
 
