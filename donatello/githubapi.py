@@ -46,7 +46,7 @@ class GithubAPI(object):
         :param pr_number: init
         """
         pr = self._get_pull_request(repository, pr_number)
-        review_comments = pr.get_review_comments()
+        review_comments = pr.get_issue_comments()
         comments = [{"body": comment.body, "user": comment.user.login} for comment in review_comments]
 
         return comments
