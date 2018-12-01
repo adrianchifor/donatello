@@ -14,11 +14,13 @@ BINANCE_API_KEY = os.getenv("BINANCE_API_KEY", None)
 BINANCE_SECRET_KEY = os.getenv("BINANCE_SECRET_KEY", None)
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", None)
 GITHUB_WEBHOOK_SECRET = os.getenv("GITHUB_WEBHOOK_SECRET", None)
-ALLOWED_REPOS = "adrianchifor/donatello"
+ALLOWED_REPOS = os.getenv("ALLOWED_REPOS", None)
 
-if not (BINANCE_API_KEY and BINANCE_SECRET_KEY and GITHUB_TOKEN and GITHUB_WEBHOOK_SECRET):
-    raise Exception("Make sure you've set BINANCE_API_KEY, BINANCE_SECRET_KEY, GITHUB_TOKEN " +
-                    "and GITHUB_WEBHOOK_SECRET as environment variables")
+if not (BINANCE_API_KEY and BINANCE_SECRET_KEY and GITHUB_TOKEN and GITHUB_WEBHOOK_SECRET and ALLOWED_REPOS):
+    raise Exception("Make sure you've set BINANCE_API_KEY, BINANCE_SECRET_KEY, GITHUB_TOKEN, " +
+                    "GITHUB_WEBHOOK_SECRET and ALLOWED_REPOS as environment variables")
+
+ALLOWED_REPOS = ALLOWED_REPOS.split(",")
 
 exchange = ccxt.binance({
     "apiKey": BINANCE_API_KEY,
@@ -50,7 +52,7 @@ def main():
 
     try:
         request_json = request.get_json()
-        gh = githubapi.GithubAPI(token=GITHUB_TOKEN, webhook_secret=GITHUB_WEBHOOK_SECRET, allowed_repositories=[ALLOWED_REPOS])
+        gh = githubapi.GithubAPI(token=GITHUB_TOKEN, webhook_secret=GITHUB_WEBHOOK_SECRET, allowed_repositories=ALLOWED_REPOS)
         event = gh.webhook(request=request_json)
         if event:
             if event["body"].startswith("/tip"):
