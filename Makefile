@@ -23,7 +23,7 @@ deploy:
 	cp requirements.txt dist/
 	cp donatello/*.py dist/
 	gcloud beta functions deploy DonatelloListener --runtime python37 --region=europe-west1 --memory=128MB \
-	  --entry-point=main --trigger-http \
+	  --project="${GCLOUD_PROJECT_ID}" --entry-point=main --trigger-http \
 		--set-env-vars BINANCE_API_KEY="${BINANCE_API_KEY}",BINANCE_SECRET_KEY="${BINANCE_SECRET_KEY}",\
 	GITHUB_APP_ID="${GITHUB_APP_ID}",GITHUB_PRIVATE_KEY="${GITHUB_PRIVATE_KEY}",GITHUB_WEBHOOK_SECRET="${GITHUB_WEBHOOK_SECRET}" \
 		--source=./dist/

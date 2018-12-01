@@ -8,8 +8,9 @@ Crypto tipping bot for github PRs/projects
 
 ### ENV vars
 
-Make sure you have the following environment variables defined:
+Make sure you have the following environment variables defined locally:
 
+ - GCLOUD_PROJECT_ID:
  - BINANCE_API_KEY:
  - BINANCE_SECRET_KEY:
  - GITHUB_APP_ID:
