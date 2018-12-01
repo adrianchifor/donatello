@@ -69,7 +69,6 @@ def main(request):
                 else:
                     print("exchange, tickers or balance not initialised")
 
-
             elif event["body"].startswith("/redeem"):
                 comments = gh.get_comments(event["repo_name"], event["pr_name"])
                 comments_with_tip = []
@@ -85,13 +84,13 @@ def main(request):
                         comments_with_redeem.append(comment)
 
                 if len(comments_with_tip) > 0 and len(comments_with_redeem) > 0:
-                    coin, address = tip.parse_redeem(comments_with_redeem[-1])
-                    amount = tip.parse_tip(comments_with_tip[-1])
+                    coin, address = tip.parse_redeem(comments_with_redeem[-1]["body"])
+                    amount_tipped = tip.parse_tip(comments_with_tip[-1]["body"])
 
                     if coin and address:
-                        if amount:
+                        if amount_tipped:
                             if exchange and tickers:
-                                crypto_amount = payment.coin_amount_for_usd(coin, amount, tickers)
+                                crypto_amount = payment.coin_amount_for_usd(coin, amount_tipped, tickers)
                                 successful = payment.withdraw(exchange, coin, crypto_amount, address)
                                 if successful:
                                     gh.comment(event["repo_name"], event["pr_name"], "/withdraw successful")
