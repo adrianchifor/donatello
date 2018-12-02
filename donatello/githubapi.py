@@ -1,4 +1,6 @@
+import hashlib
 import hmac
+import json
 from typing import Dict, List, Union
 
 from github import Github
@@ -16,7 +18,7 @@ class GithubAPI(object):
         :param allowed_repositories: List
         """
         self.gh = Github(token)
-        self.webhook_secret = webhook_secret
+        self.webhook_secret = bytes(webhook_secret, 'utf-8')
         self.allowed_repositories = allowed_repositories
 
     def webhook(self, request: Dict, signature: str) -> Union[Dict, None]:
@@ -68,9 +70,10 @@ class GithubAPI(object):
         if sha != 'sha1':
             return False
 
-        mac = hmac.new(self.webhook_secret.encode(), msg, digestmod=sha)
+        message = bytes(json.dumps(msg), 'utf-8')
+        hash = hmac.new(self.webhook_secret, message, digestmod=hashlib.sha1)
 
-        return hmac.compare_digest(str(mac.hexdigest(), str(signature_mac)))
+        return hmac.compare_digest(str(hash.hexdigest()), str(signature_mac))
 
     def _get_pull_request(self, repository: str, pr_number: int) -> PullRequest:
         """
