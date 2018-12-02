@@ -73,7 +73,7 @@ class GithubAPI(object):
         message = bytes(json.dumps(msg), 'utf-8')
         hash = hmac.new(self.webhook_secret, message, digestmod=hashlib.sha1)
 
-        return hmac.compare_digest(str(hash.hexdigest()), str(signature_mac))
+        return hmac.compare_digest(str(hash.hexdigest()), signature_mac)
 
     def _get_pull_request(self, repository: str, pr_number: int) -> PullRequest:
         """

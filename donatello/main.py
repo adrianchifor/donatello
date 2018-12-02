@@ -54,7 +54,6 @@ def main() -> Any:
 
     try:
         request_json = request.get_json()
-        request.data
         signature = request.headers.get('X-Hub-Signature')
         gh = githubapi.GithubAPI(token=GITHUB_TOKEN, webhook_secret=GITHUB_WEBHOOK_SECRET, allowed_repositories=ALLOWED_REPOS)
         event = gh.webhook(request=request_json, signature=signature)
